@@ -47,24 +47,22 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
-# -----------------------------
-# Prediction
-# -----------------------------
 if uploaded_file is not None:
 
     image = Image.open(uploaded_file).convert("RGB")
 
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    img = image.resize((128, 128))
+    # Resize to the model's expected size
+    img = image.resize((64, 64))
 
-    img_array = np.array(img)
+    img_array = np.array(img, dtype=np.float32)
 
     img_array = img_array / 255.0
 
     img_array = np.expand_dims(img_array, axis=0)
 
-    prediction = model.predict(img_array)[0][0]
+    prediction = model.predict(img_array, verbose=0)[0][0]
 
     st.write("### Prediction Result")
 
