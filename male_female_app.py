@@ -8,16 +8,10 @@ Original file is located at
 """
 
 import streamlit as st
+import tensorflow as tf
 import numpy as np
 from PIL import Image
 import os
-
-# Try importing TensorFlow
-try:
-    import tensorflow as tf
-except ModuleNotFoundError:
-    st.error("TensorFlow is not installed. Please check requirements.txt and the deployment environment.")
-    st.stop()
 
 # -----------------------------
 # Page Configuration
@@ -34,43 +28,49 @@ st.set_page_config(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "eye_gender_classifier.keras")
 
-if not os.path.exists(MODEL_PATH):
-    st.error(f"Model file not found:\n{MODEL_PATH}")
-    st.stop()
-
-try:
-    model = tf.keras.models.load_model(MODEL_PATH)
-except Exception as e:
-    st.error(f"Unable to load model:\n{e}")
-    st.stop()
+model = tf.keras.models.load_model(MODEL_PATH)
 
 # -----------------------------
 # Title
 # -----------------------------
 st.title("👁️ Male & Female Eye Classifier")
 
-st.write("Upload an eye image to predict Male or Female.")
+st.write(
+    "Upload an eye image and the model will predict whether it belongs to a Male or Female."
+)
 
+# -----------------------------
+# Upload Image
+# -----------------------------
 uploaded_file = st.file_uploader(
     "Choose an Eye Image",
     type=["jpg", "jpeg", "png"]
 )
 
-if uploaded_file:
+# -----------------------------
+# Prediction
+# -----------------------------
+if uploaded_file is not None:
 
     image = Image.open(uploaded_file).convert("RGB")
 
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-    img = image.resize((128,128))
+    img = image.resize((128, 128))
 
-    img = np.array(img).astype("float32") / 255.0
+    img_array = np.array(img)
 
-    img = np.expand_dims(img, axis=0)
+    img_array = img_array / 255.0
 
-    prediction = model.predict(img, verbose=0)[0][0]
+    img_array = np.expand_dims(img_array, axis=0)
+
+    prediction = model.predict(img_array)[0][0]
+
+    st.write("### Prediction Result")
 
     if prediction >= 0.5:
-        st.success(f"👨 Male Eye\n\nConfidence: {prediction*100:.2f}%")
+        st.success("👨 Male Eye")
+        st.write(f"Confidence : {prediction*100:.2f}%")
     else:
-        st.success(f"👩 Female Eye\n\nConfidence: {(1-prediction)*100:.2f}%")
+        st.success("👩 Female Eye")
+        st.write(f"Confidence : {(1-prediction)*100:.2f}%")
